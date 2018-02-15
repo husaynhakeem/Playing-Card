@@ -8,11 +8,29 @@
 
 import UIKit
 
+@IBDesignable
 class PlayingCardView: UIView {
     
-    var rank: Int = 5 { didSet { setNeedsDisplay(); setNeedsLayout() } }
-    var suit: String = "♥" { didSet { setNeedsDisplay(); setNeedsLayout() } }
+    @IBInspectable
+    var rank: Int = 4 { didSet { setNeedsDisplay(); setNeedsLayout() } }
+    
+    @IBInspectable
+    var suit: String = "♥" { didSet{ setNeedsDisplay(); setNeedsLayout() } }
+    
+    @IBInspectable
     var isFaceUp: Bool = true { didSet { setNeedsDisplay(); setNeedsLayout() } }
+    
+    var faceCardScale: CGFloat = SizeRatio.faceCardImageSizeToBoundsSize { didSet { setNeedsDisplay() } }
+    
+    @objc func adjustFaceCardScale(byHandlingGestureRecognizedBy recognizer: UIPinchGestureRecognizer) {
+        switch recognizer.state {
+        case .changed, .ended:
+            faceCardScale *= recognizer.scale
+            recognizer.scale = 1.0
+        default:
+            break
+        }
+    }
     
     private func centeredAttributedString(_ string: String, fontSize: CGFloat) -> NSAttributedString {
         var font = UIFont.preferredFont(forTextStyle: .body).withSize(fontSize)
@@ -62,12 +80,22 @@ class PlayingCardView: UIView {
         label.sizeToFit()
         label.isHidden = !isFaceUp
     }
-
+    
     override func draw(_ rect: CGRect) {
         let roundedRect = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius)
         roundedRect.addClip()
         UIColor.white.setFill()
         roundedRect.fill()
+        
+        if isFaceUp {
+            if let faceCardImage = UIImage(named: rankString + suit, in: Bundle(for: self.classForCoder), compatibleWith: traitCollection) {
+                faceCardImage.draw(in: bounds.zoom(by: faceCardScale))
+            }
+        } else {
+            if let backCardImage = UIImage(named: "cardBack", in: Bundle(for: self.classForCoder), compatibleWith: traitCollection) {
+                backCardImage.draw(in: bounds)
+            }
+        }
     }
 }
 
@@ -77,7 +105,7 @@ extension PlayingCardView {
         static let cornerFontSizeToBoundsHeight: CGFloat = 0.085
         static let cornerRadiusToBoundsHeight: CGFloat = 0.06
         static let cornerOffsetToCornerRadius: CGFloat = 0.033
-        static let faceCardImageSizeToBoundsSize: CGFloat = 0.75
+        static let faceCardImageSizeToBoundsSize: CGFloat = 0.55
     }
     
     private var cornerRadius: CGFloat {
